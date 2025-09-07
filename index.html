@@ -361,7 +361,8 @@
     let isLaserActive = false, laserEndTime = 0, laserCooldownEndTime = 0;
     
     let boss = null;
-    let bossSpawned = false, superBossSpawned = false;
+    let difficultyLevel = 1;
+    let nextBossScore = 10000;
     let currentPlayer = '';
 
     // --- 스킨 데이터 ---
@@ -560,24 +561,6 @@
             bossBullets.push(new Bullet(bulletX, bulletY, 10, 20, 5, '#f39c12'));
         }
     }
-
-    class SuperBoss extends Boss {
-        constructor(x, y, w, h, speed, health) { super(x, y, w, h, speed, health); }
-        draw() {
-            ctx.fillStyle = '#1E293B'; ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.fillStyle = '#EF4444'; ctx.fillRect(this.x + this.width * 0.2, this.y, this.width * 0.6, this.height * 0.8);
-            ctx.fillStyle = '#FBBF24'; ctx.fillRect(this.x, this.y + this.height * 0.7, this.width, this.height * 0.3);
-            const healthBarWidth = this.width * (this.health / this.maxHealth);
-            ctx.fillStyle = '#c0392b'; ctx.fillRect(this.x, this.y - 20, this.width, 10);
-            ctx.fillStyle = '#2ecc71'; ctx.fillRect(this.x, this.y - 20, healthBarWidth, 10);
-        }
-        shoot() {
-            const centerX = this.x + this.width / 2, bulletY = this.y + this.height;
-            bossBullets.push(new Bullet(centerX - 5, bulletY, 10, 20, 7, '#e74c3c'));
-            bossBullets.push(new Bullet(centerX - 50, bulletY, 10, 20, 7, '#e74c3c'));
-            bossBullets.push(new Bullet(centerX + 40, bulletY, 10, 20, 7, '#e74c3c'));
-        }
-    }
     
     class Star {
         constructor(x, y, radius, speed) {
@@ -626,7 +609,7 @@
         bullets = []; enemies = []; enemyBullets = []; bossBullets = [];
         itemCoins = []; healthPacks = [];
         enemySpawnTimer = 0; shootCooldown = 0; boss = null;
-        bossSpawned = false; superBossSpawned = false;
+        difficultyLevel = 1; nextBossScore = 10000;
         player = new Player(canvas.width / 2 - 25, canvas.height - 120, 50, 50, 5);
         applySkinAbilities();
         updateHealthDisplay();
@@ -671,9 +654,7 @@
 
         const now = performance.now();
         if (keys['Space'] && !isLaserActive && now > laserCooldownEndTime) {
-            if (spacebarHoldStart === 0) {
-                 // This is set on keydown, handled separately now
-            } else {
+            if (spacebarHoldStart > 0) {
                 const holdDuration = now - spacebarHoldStart;
                 if (holdDuration > 1000) { // Start charging after 1 sec
                     const chargeTime = holdDuration - 1000;
@@ -696,13 +677,14 @@
         
         if (shootCooldown > 0) shootCooldown--;
         
-        if (score >= 10000 && bossSpawned && !superBossSpawned && !boss) { superBossSpawned = true; spawnSuperBoss(); }
-        else if (score >= 1500 && !bossSpawned) { bossSpawned = true; spawnBoss(); }
+        if (score >= nextBossScore && !boss) {
+            spawnBoss();
+        }
         
         [bullets, bossBullets, enemyBullets, itemCoins, healthPacks].forEach(arr => {
             arr.forEach((item, index) => { item.update(); item.draw(); if (item.y > canvas.height) arr.splice(index, 1); });
         });
-        if (!boss) { enemySpawnTimer++; if (enemySpawnTimer > 50) { spawnEnemy(); enemySpawnTimer = 0; } }
+        if (!boss) { enemySpawnTimer++; if (enemySpawnTimer > Math.max(20, 60 - difficultyLevel * 5)) { spawnEnemy(); enemySpawnTimer = 0; } }
         enemies.forEach((enemy) => { enemy.update(); enemy.draw(); });
         if (boss) boss.update();
         handleCollisions();
@@ -711,11 +693,22 @@
 
     // --- 보조 함수들 ---
     function spawnEnemy() {
-        if (Math.random() < 0.2) { enemies.push(new Enemy(Math.random() * (canvas.width - 60), -60, 60, 60, 1, 2, '#B91C1C')); }
-        else { const size = Math.random() * 20 + 30; enemies.push(new Enemy(Math.random() * (canvas.width - size), -size, size, size, Math.random() * 2 + 1, 1, '#F87171')); }
+        const speedMultiplier = 1 + (difficultyLevel - 1) * 0.1;
+        if (Math.random() < 0.2) { 
+            enemies.push(new Enemy(Math.random() * (canvas.width - 60), -60, 60, 60, 1 * speedMultiplier, 2, '#B91C1C')); 
+        } else { 
+            const size = Math.random() * 20 + 30; 
+            enemies.push(new Enemy(Math.random() * (canvas.width - size), -size, size, size, (Math.random() * 2 + 1) * speedMultiplier, 1, '#F87171')); 
+        }
     }
-    function spawnBoss() { boss = new Boss(canvas.width / 2 - 75, 50, 150, 100, 2, 30); }
-    function spawnSuperBoss() { boss = new SuperBoss(canvas.width / 2 - 100, 50, 200, 120, 3, 100); }
+    function spawnBoss() { 
+        const health = 30 + (difficultyLevel - 1) * 20;
+        const speed = 2 + (difficultyLevel - 1) * 0.5;
+        const width = Math.min(canvas.width * 0.8, 150 + (difficultyLevel - 1) * 10);
+        const height = Math.min(canvas.height * 0.4, 100 + (difficultyLevel - 1) * 10);
+        boss = new Boss(canvas.width / 2 - width/2, 50, width, height, speed, health); 
+    }
+
     function shoot() {
         if(shootCooldown > 0 || isLaserActive) return;
         const bulletX = player.x + player.width / 2 - 2.5; const bulletY = player.y;
@@ -728,7 +721,6 @@
     }
 
     function defeatEnemy(enemy, index) {
-        const isSuperBoss = enemy instanceof SuperBoss;
         const isBoss = enemy instanceof Boss;
         const isBig = !isBoss && enemy.width > 50;
         
@@ -736,12 +728,14 @@
         let coinDrops = [];
 
         if (isBoss) {
-            scoreGain = isSuperBoss ? 10000 : 5000;
-            const coinCount = isSuperBoss ? 50 : 25;
+            scoreGain = 5000 * difficultyLevel;
+            const coinCount = 25 * difficultyLevel;
             for(let c = 0; c < coinCount; c++) {
                 coinDrops.push(new Coin(enemy.x + enemy.width / 2 + (Math.random() - 0.5) * enemy.width, enemy.y + enemy.height/2 + (Math.random() - 0.5) * enemy.height, 20));
             }
             boss = null;
+            difficultyLevel++;
+            nextBossScore += 10000;
             presentSkillChoice();
         } else {
             scoreGain = isBig ? 250 : 100;
@@ -928,12 +922,18 @@
     }
 
     window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') handleShootStart(e);
-        else keys[e.code] = true;
+        if (e.code === 'Space') {
+            if (!keys['Space']) handleShootStart(e); // prevent multiple triggers
+        } else {
+            keys[e.code] = true;
+        }
     });
     window.addEventListener('keyup', (e) => {
-        if (e.code === 'Space') handleShootEnd(e);
-        else keys[e.code] = false;
+        if (e.code === 'Space') {
+            handleShootEnd(e);
+        } else {
+            keys[e.code] = false;
+        }
     });
     
     startButton.addEventListener('click', () => { lobbyScreen.classList.add('hidden'); gameStats.classList.remove('hidden'); mobileControls.classList.remove('hidden'); init(); requestAnimationFrame(gameLoop); });
