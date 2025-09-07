@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>비행기 슈팅 게임</title>
+    <title>김도유의 비행기 게임</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
     <style>
@@ -156,19 +156,30 @@
             }
             #skill-choices {
                 flex-direction: column;
-                gap: 15px;
+                gap: 10px;
+                max-height: 60vh;
+                overflow-y: auto;
+                padding-right: 10px;
             }
             .skill-card {
                 width: 100%;
+                padding: 15px;
             }
             .modal-content h1, .modal-content h2 {
-                font-size: 2.5rem; /* Adjust title font size on mobile */
+                font-size: 2.2rem;
+                line-height: 1.2;
             }
             .modal-content p {
-                font-size: 1rem; /* Adjust paragraph font size on mobile */
+                font-size: 1rem;
             }
-            .flex.gap-4 { /* Adjust button groups */
+            .modal-buttons {
                 flex-direction: column;
+                width: 100%;
+            }
+            .name-input-group {
+                flex-direction: column;
+                width: 100%;
+                align-items: stretch;
             }
         }
     </style>
@@ -187,11 +198,11 @@
         <!-- 이름 입력 화면 -->
         <div id="name-prompt-screen" class="modal hidden">
             <div class="modal-content">
-                <h1 class="text-4xl font-bold mb-4">환영합니다!</h1>
-                <p class="text-xl mb-6">데이터 저장을 위해 사용할 이름을 입력해주세요.</p>
-                <div class="flex items-center gap-2">
-                    <input type="text" id="new-name-input" placeholder="이름" class="px-4 py-2 rounded text-xl">
-                    <button id="confirm-name-button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl">확인</button>
+                <h1 class="text-3xl sm:text-4xl font-bold mb-4">환영합니다!</h1>
+                <p class="text-lg sm:text-xl mb-6">데이터 저장을 위해 사용할 이름을 입력해주세요.</p>
+                <div class="flex items-center gap-2 name-input-group">
+                    <input type="text" id="new-name-input" placeholder="이름" class="w-full px-4 py-2 rounded text-lg sm:text-xl text-center sm:text-left">
+                    <button id="confirm-name-button" class="w-full px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-lg sm:text-xl">확인</button>
                 </div>
             </div>
         </div>
@@ -199,17 +210,17 @@
         <!-- 로비 화면 -->
         <div id="lobby-screen" class="modal hidden">
             <div class="modal-content">
-                <h1 class="text-5xl font-bold mb-4">도유의 비행기 게임</h1>
-                <p id="welcome-message" class="text-xl mb-6"></p>
+                <h1 class="text-4xl sm:text-5xl font-bold mb-4">김도유의 비행기 게임</h1>
+                <p id="welcome-message" class="text-lg sm:text-xl mb-6"></p>
                 <div id="lobby-coin-display" class="text-2xl mb-4"></div>
-                <div class="flex gap-4">
-                    <button id="start-button" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="start-button" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
                         게임 시작
                     </button>
-                    <button id="shop-button" class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                    <button id="shop-button" class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
                         상점
                     </button>
-                    <button id="ranking-button-main" class="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                    <button id="ranking-button-main" class="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
                         랭킹
                     </button>
                 </div>
@@ -219,29 +230,37 @@
         <!-- 게임 오버 화면 -->
         <div id="game-over-screen" class="modal hidden">
             <div class="modal-content">
-                <h2 class="text-5xl font-bold mb-4">게임 오버</h2>
-                <p id="final-score" class="text-2xl mb-2"></p>
-                <p id="earned-coins" class="text-2xl mb-6"></p>
-                <div class="flex items-center gap-2 mb-4">
-                    <input type="text" id="name-input" placeholder="이름 입력" class="px-4 py-2 rounded text-xl" readonly>
-                    <button id="save-score-button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl shadow-lg transition">랭킹 저장</button>
+                <h2 class="text-4xl sm:text-5xl font-bold mb-4">게임 오버</h2>
+                <p id="final-score" class="text-xl sm:text-2xl mb-2"></p>
+                <p id="earned-coins" class="text-xl sm:text-2xl mb-6"></p>
+                <div class="flex items-center gap-2 mb-4 name-input-group">
+                    <input type="text" id="name-input" placeholder="이름 입력" class="w-full px-4 py-2 rounded text-lg sm:text-xl text-center sm:text-left" readonly>
+                    <button id="save-score-button" class="w-full px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-lg sm:text-xl shadow-lg transition">랭킹 저장</button>
                 </div>
-                <button id="restart-button" class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
-                    다시 시작
-                </button>
+                <div class="flex flex-col sm:flex-row gap-4 mt-4">
+                    <button id="restart-button" class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                        다시 시작
+                    </button>
+                    <button id="go-to-shop-button" class="px-8 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                        상점
+                    </button>
+                    <button id="go-to-lobby-button" class="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                        로비
+                    </button>
+                </div>
             </div>
         </div>
         
         <!-- 랭킹 화면 -->
         <div id="ranking-screen" class="modal hidden">
             <div class="modal-content">
-                <h2 class="text-5xl font-bold mb-4">명예의 전당</h2>
+                <h2 class="text-4xl sm:text-5xl font-bold mb-4">명예의 전당</h2>
                 <ol id="ranking-list" class="mb-6"></ol>
-                 <div class="flex gap-4">
-                    <button id="play-again-button" class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                 <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="play-again-button" class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
                         다시 하기
                     </button>
-                    <button id="main-menu-button" class="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
+                    <button id="main-menu-button" class="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold text-xl sm:text-2xl shadow-lg transition duration-300 transform hover:scale-105">
                         로비로
                     </button>
                 </div>
@@ -251,7 +270,7 @@
         <!-- 상점 화면 -->
         <div id="shop-screen" class="modal hidden">
             <div class="modal-content w-11/12 max-w-4xl">
-                 <h2 class="text-5xl font-bold mb-4">스킨 상점</h2>
+                 <h2 class="text-4xl sm:text-5xl font-bold mb-4">스킨 상점</h2>
                  <div id="shop-coin-display" class="text-2xl mb-4"></div>
                  <div id="skin-list" class="mb-6"></div>
                  <button id="back-to-lobby-button" class="px-8 py-4 bg-gray-600 hover:bg-gray-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
@@ -263,8 +282,8 @@
         <!-- 스킬 선택 화면 -->
         <div id="skill-choice-screen" class="modal hidden">
             <div class="modal-content">
-                <h2 class="text-5xl font-bold mb-4">스킬 선택</h2>
-                <p class="text-xl mb-6">보스를 처치했습니다! 보상으로 스킬 하나를 선택하세요.</p>
+                <h2 class="text-4xl sm:text-5xl font-bold mb-4">스킬 선택</h2>
+                <p class="text-base sm:text-xl mb-6">보스를 처치했습니다! 보상으로 스킬 하나를 선택하세요.</p>
                 <div id="skill-choices"></div>
             </div>
         </div>
@@ -273,13 +292,13 @@
         <div id="mobile-controls" class="absolute bottom-10 w-full flex justify-between items-end px-5 pointer-events-none hidden">
             <!-- Left controls -->
             <div class="flex gap-4">
-                <button id="left-button" class="control-button text-4xl bg-white/20 backdrop-blur-sm rounded-full w-20 h-20">&lt;</button>
-                <button id="right-button" class="control-button text-4xl bg-white/20 backdrop-blur-sm rounded-full w-20 h-20">&gt;</button>
+                <button id="left-button" class="control-button text-3xl sm:text-4xl bg-white/20 backdrop-blur-sm rounded-full w-16 h-16 sm:w-20 sm:h-20">&lt;</button>
+                <button id="right-button" class="control-button text-3xl sm:text-4xl bg-white/20 backdrop-blur-sm rounded-full w-16 h-16 sm:w-20 sm:h-20">&gt;</button>
             </div>
 
             <!-- Right controls -->
             <div>
-                <button id="shoot-button" class="control-button text-4xl bg-red-500/40 backdrop-blur-sm rounded-full w-24 h-24">💥</button>
+                <button id="shoot-button" class="control-button text-4xl bg-red-500/40 backdrop-blur-sm rounded-full w-20 h-20 sm:w-24 sm:h-24">💥</button>
             </div>
         </div>
     </div>
@@ -307,6 +326,8 @@
     const mainMenuButton = document.getElementById('main-menu-button');
     const backToLobbyButton = document.getElementById('back-to-lobby-button');
     const confirmNameButton = document.getElementById('confirm-name-button');
+    const goToShopButton = document.getElementById('go-to-shop-button');
+    const goToLobbyButton = document.getElementById('go-to-lobby-button');
     
     const mobileControls = document.getElementById('mobile-controls');
     const leftButton = document.getElementById('left-button');
@@ -650,16 +671,17 @@
 
         const now = performance.now();
         if (keys['Space'] && !isLaserActive && now > laserCooldownEndTime) {
-            if (spacebarHoldStart === 0) spacebarHoldStart = now;
-            const chargeTime = now - spacebarHoldStart;
-            drawLaserChargeBar(chargeTime / 4000);
-            if (chargeTime > 4000) {
-                activateLaser(now);
-            }
-        } else {
-            if (shootCooldown > 0) shootCooldown--;
-            if (keys['Space'] && !isLaserActive && shootCooldown === 0) {
-                shoot();
+            if (spacebarHoldStart === 0) {
+                 // This is set on keydown, handled separately now
+            } else {
+                const holdDuration = now - spacebarHoldStart;
+                if (holdDuration > 1000) { // Start charging after 1 sec
+                    const chargeTime = holdDuration - 1000;
+                    drawLaserChargeBar(chargeTime / 3000); // 3 seconds to fully charge
+                    if (chargeTime > 3000) {
+                        activateLaser(now);
+                    }
+                }
             }
         }
         
@@ -672,9 +694,7 @@
             }
         }
         
-        if (!keys['Space']) {
-            spacebarHoldStart = 0;
-        }
+        if (shootCooldown > 0) shootCooldown--;
         
         if (score >= 10000 && bossSpawned && !superBossSpawned && !boss) { superBossSpawned = true; spawnSuperBoss(); }
         else if (score >= 1500 && !bossSpawned) { bossSpawned = true; spawnBoss(); }
@@ -697,6 +717,7 @@
     function spawnBoss() { boss = new Boss(canvas.width / 2 - 75, 50, 150, 100, 2, 30); }
     function spawnSuperBoss() { boss = new SuperBoss(canvas.width / 2 - 100, 50, 200, 120, 3, 100); }
     function shoot() {
+        if(shootCooldown > 0 || isLaserActive) return;
         const bulletX = player.x + player.width / 2 - 2.5; const bulletY = player.y;
         bullets.push(new Bullet(bulletX, bulletY, 5, 15, -10, '#f0e68c'));
         shootCooldown = player.shootCooldownFrames;
@@ -819,6 +840,8 @@
         earnedCoinsDisplay.textContent = `획득 코인: ${currentRoundCoins.toLocaleString()} 💰`;
         gameOverScreen.classList.remove('hidden');
         mobileControls.classList.add('hidden');
+        saveScoreButton.textContent = '랭킹 저장';
+        saveScoreButton.disabled = false;
     }
     function getRankings() { return JSON.parse(localStorage.getItem('airplaneShooterRankings') || '[]'); }
     function saveScore() {
@@ -834,7 +857,7 @@
         rankingScreen.classList.remove('hidden');
         const rankings = getRankings(); rankingList.innerHTML = '';
         if (rankings.length === 0) { rankingList.innerHTML = '<li>아직 랭킹이 없습니다.</li>'; }
-        else { rankings.forEach(entry => { const li = document.createElement('li'); li.textContent = `${entry.name}: ${entry.score.toLocaleString()}점`; rankingList.appendChild(li); }); }
+        else { rankings.forEach(entry => { const li = document.createElement('li'); li.className = "text-lg sm:text-2xl"; li.textContent = `${entry.name}: ${entry.score.toLocaleString()}점`; rankingList.appendChild(li); }); }
     }
 
     function presentSkillChoice() {
@@ -885,8 +908,34 @@
     }
 
     // --- 이벤트 리스너 ---
-    window.addEventListener('keydown', (e) => { keys[e.code] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+    function handleShootStart(e) {
+        e.preventDefault();
+        keys['Space'] = true;
+        if (spacebarHoldStart === 0) {
+            spacebarHoldStart = performance.now();
+        }
+    }
+    function handleShootEnd(e) {
+        e.preventDefault();
+        keys['Space'] = false;
+        if (spacebarHoldStart > 0) {
+            const holdDuration = performance.now() - spacebarHoldStart;
+            if (holdDuration < 1000) { // Only shoot if held for less than a second
+                shoot();
+            }
+        }
+        spacebarHoldStart = 0;
+    }
+
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') handleShootStart(e);
+        else keys[e.code] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        if (e.code === 'Space') handleShootEnd(e);
+        else keys[e.code] = false;
+    });
+    
     startButton.addEventListener('click', () => { lobbyScreen.classList.add('hidden'); gameStats.classList.remove('hidden'); mobileControls.classList.remove('hidden'); init(); requestAnimationFrame(gameLoop); });
     restartButton.addEventListener('click', () => { gameOverScreen.classList.add('hidden'); gameStats.classList.remove('hidden'); mobileControls.classList.remove('hidden'); init(); requestAnimationFrame(gameLoop); });
     saveScoreButton.addEventListener('click', saveScore);
@@ -895,6 +944,8 @@
     backToLobbyButton.addEventListener('click', () => { shopScreen.classList.add('hidden'); lobbyScreen.classList.remove('hidden'); mobileControls.classList.add('hidden'); updateCoinDisplays(); });
     playAgainButton.addEventListener('click', () => { rankingScreen.classList.add('hidden'); gameStats.classList.remove('hidden'); mobileControls.classList.remove('hidden'); init(); requestAnimationFrame(gameLoop); });
     mainMenuButton.addEventListener('click', () => { rankingScreen.classList.add('hidden'); lobbyScreen.classList.remove('hidden'); mobileControls.classList.add('hidden');});
+    goToShopButton.addEventListener('click', () => { gameOverScreen.classList.add('hidden'); shopScreen.classList.remove('hidden'); populateShop(); });
+    goToLobbyButton.addEventListener('click', () => { gameOverScreen.classList.add('hidden'); lobbyScreen.classList.remove('hidden');});
     confirmNameButton.addEventListener('click', confirmName);
     
     // 모바일 터치 이벤트
@@ -902,8 +953,8 @@
     leftButton.addEventListener('touchend', (e) => { e.preventDefault(); keys['ArrowLeft'] = false; });
     rightButton.addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowRight'] = true; });
     rightButton.addEventListener('touchend', (e) => { e.preventDefault(); keys['ArrowRight'] = false; });
-    shootButton.addEventListener('touchstart', (e) => { e.preventDefault(); keys['Space'] = true; });
-    shootButton.addEventListener('touchend', (e) => { e.preventDefault(); keys['Space'] = false; });
+    shootButton.addEventListener('touchstart', handleShootStart);
+    shootButton.addEventListener('touchend', handleShootEnd);
 
     window.addEventListener('resize', () => { if (!lobbyScreen.classList.contains('hidden')) { const c = document.getElementById('game-container'); canvas.width = c.clientWidth; canvas.height = c.clientHeight; }});
     
