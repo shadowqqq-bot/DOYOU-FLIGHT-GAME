@@ -51,7 +51,7 @@
             align-items: flex-start;
             gap: 10px;
         }
-        #score-display, #coin-display {
+        #score-display, #coin-display, #bomb-display {
             font-size: 1.5rem;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         }
@@ -110,6 +110,9 @@
             padding: 10px;
             background: rgba(0,0,0,0.3);
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .skin-preview {
             width: 100px;
@@ -193,6 +196,7 @@
             <div id="score-display">점수: 0</div>
             <div id="coin-display">코인: 0</div>
             <div id="health-display"></div>
+            <div id="bomb-display"></div>
         </div>
         
         <!-- 이름 입력 화면 -->
@@ -297,7 +301,8 @@
             </div>
 
             <!-- Right controls -->
-            <div>
+            <div class="relative flex flex-col items-center gap-2">
+                <button id="bomb-button" class="control-button text-2xl bg-yellow-500/50 backdrop-blur-sm rounded-full w-14 h-14 sm:w-16 sm:h-16 hidden">💣<span id="mobile-bomb-count"></span></button>
                 <button id="shoot-button" class="control-button text-4xl bg-red-500/40 backdrop-blur-sm rounded-full w-20 h-20 sm:w-24 sm:h-24">💥</button>
             </div>
         </div>
@@ -333,6 +338,8 @@
     const leftButton = document.getElementById('left-button');
     const rightButton = document.getElementById('right-button');
     const shootButton = document.getElementById('shoot-button');
+    const bombButton = document.getElementById('bomb-button');
+    const mobileBombCount = document.getElementById('mobile-bomb-count');
     
     const nameInput = document.getElementById('name-input');
     const newNameInput = document.getElementById('new-name-input');
@@ -343,6 +350,7 @@
     const gameStats = document.getElementById('game-stats');
     const scoreDisplay = document.getElementById('score-display');
     const coinDisplay = document.getElementById('coin-display');
+    const bombDisplay = document.getElementById('bomb-display');
     const welcomeMessage = document.getElementById('welcome-message');
     const lobbyCoinDisplay = document.getElementById('lobby-coin-display');
     const shopCoinDisplay = document.getElementById('shop-coin-display');
@@ -351,11 +359,11 @@
     const earnedCoinsDisplay = document.getElementById('earned-coins');
 
     let animationFrameId;
-    let score, coins, currentRoundCoins;
+    let score, coins, currentRoundCoins, bombs;
     let gameOver, gamePaused;
     let keys = {};
     let player;
-    let bullets, enemies, enemyBullets, bossBullets, itemCoins, healthPacks;
+    let bullets, enemies, enemyBullets, bossBullets, itemCoins, healthPacks, itemBombs;
     let enemySpawnTimer, stars, shootCooldown;
     let spacebarHoldStart = 0;
     let isLaserActive = false, laserEndTime = 0, laserCooldownEndTime = 0;
@@ -600,19 +608,38 @@
         }
         update() { this.y += this.speed; }
     }
+    
+    class BombPack {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.width = 25; this.height = 25; this.speed = 2;
+        }
+        draw() {
+            ctx.fillStyle = '#34495e';
+            ctx.beginPath();
+            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#e74c3c';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 16px Jua';
+            ctx.fillText('B', this.x + this.width / 2, this.y + this.height / 2);
+        }
+        update() { this.y += this.speed; }
+    }
 
     // --- 게임 초기화 ---
     function init() {
         const container = document.getElementById('game-container');
         canvas.width = container.clientWidth; canvas.height = container.clientHeight;
-        score = 0; currentRoundCoins = 0; gameOver = false; gamePaused = false;
+        score = 0; currentRoundCoins = 0; bombs = 1; gameOver = false; gamePaused = false;
         bullets = []; enemies = []; enemyBullets = []; bossBullets = [];
-        itemCoins = []; healthPacks = [];
+        itemCoins = []; healthPacks = []; itemBombs = [];
         enemySpawnTimer = 0; shootCooldown = 0; boss = null;
         difficultyLevel = 1; nextBossScore = 10000;
         player = new Player(canvas.width / 2 - 25, canvas.height - 120, 50, 50, 5);
         applySkinAbilities();
         updateHealthDisplay();
+        updateBombDisplay();
         isLaserActive = false; laserEndTime = 0; laserCooldownEndTime = 0; spacebarHoldStart = 0;
         stars = Array.from({ length: 100 }, () => new Star(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.5, Math.random() * 0.5 + 0.2));
         scoreDisplay.textContent = `점수: ${score}`;
@@ -681,7 +708,7 @@
             spawnBoss();
         }
         
-        [bullets, bossBullets, enemyBullets, itemCoins, healthPacks].forEach(arr => {
+        [bullets, bossBullets, enemyBullets, itemCoins, healthPacks, itemBombs].forEach(arr => {
             arr.forEach((item, index) => { item.update(); item.draw(); if (item.y > canvas.height) arr.splice(index, 1); });
         });
         if (!boss) { enemySpawnTimer++; if (enemySpawnTimer > Math.max(20, 60 - difficultyLevel * 5)) { spawnEnemy(); enemySpawnTimer = 0; } }
@@ -720,37 +747,44 @@
         return rect1.x < rect2.x + rect2.width && rect1.x + rect1.width > rect2.x && rect1.y < rect2.y + rect2.height && rect1.y + rect1.height > rect2.y;
     }
 
-    function defeatEnemy(enemy, index) {
+    function defeatEnemy(enemy, index, fromBomb = false) {
         const isBoss = enemy instanceof Boss;
         const isBig = !isBoss && enemy.width > 50;
         
         let scoreGain = 0;
-        let coinDrops = [];
 
         if (isBoss) {
             scoreGain = 5000 * difficultyLevel;
-            const coinCount = 25 * difficultyLevel;
-            for(let c = 0; c < coinCount; c++) {
-                coinDrops.push(new Coin(enemy.x + enemy.width / 2 + (Math.random() - 0.5) * enemy.width, enemy.y + enemy.height/2 + (Math.random() - 0.5) * enemy.height, 20));
+            if(!fromBomb){
+                const coinCount = 25 * difficultyLevel;
+                for(let c = 0; c < coinCount; c++) {
+                    itemCoins.push(new Coin(enemy.x + enemy.width / 2 + (Math.random() - 0.5) * enemy.width, enemy.y + enemy.height/2 + (Math.random() - 0.5) * enemy.height, 20));
+                }
+                boss = null;
+                difficultyLevel++;
+                nextBossScore += 10000;
+                presentSkillChoice();
             }
-            boss = null;
-            difficultyLevel++;
-            nextBossScore += 10000;
-            presentSkillChoice();
         } else {
             scoreGain = isBig ? 250 : 100;
-            const coinCount = isBig ? 2 : 1;
-            for(let c = 0; c < coinCount; c++) {
-                coinDrops.push(new Coin(enemy.x + (Math.random() - 0.5) * 20, enemy.y, 10));
-            }
-            if (Math.random() < 0.15) {
-                healthPacks.push(new HealthPack(enemy.x, enemy.y));
+             if(!fromBomb){
+                if (Math.random() < 0.3) {
+                    const coinCount = isBig ? 2 : 1;
+                    for(let c = 0; c < coinCount; c++) {
+                        itemCoins.push(new Coin(enemy.x + (Math.random() - 0.5) * 20, enemy.y, 10));
+                    }
+                }
+                if (Math.random() < 0.1) {
+                    healthPacks.push(new HealthPack(enemy.x, enemy.y));
+                }
+                 if (Math.random() < 0.1) {
+                    itemBombs.push(new BombPack(enemy.x, enemy.y));
+                }
             }
             enemies.splice(index, 1);
         }
         
         score += scoreGain;
-        itemCoins.push(...coinDrops);
         scoreDisplay.textContent = `점수: ${score.toLocaleString()}`;
     }
 
@@ -778,7 +812,7 @@
                     boss.health -= player.bulletDamage;
                     if (!player.pierceShot) bullets.splice(i, 1);
                     if (boss.health <= 0) {
-                        defeatEnemy(boss);
+                        defeatEnemy(boss, -1);
                     }
                     if (!player.pierceShot) break;
                 }
@@ -787,6 +821,7 @@
 
         for (let i = itemCoins.length - 1; i >= 0; i--) if (isColliding(player, itemCoins[i])) { currentRoundCoins += itemCoins[i].value * player.coinMultiplier; updateCoinDisplays(); itemCoins.splice(i, 1); }
         for (let i = healthPacks.length - 1; i >= 0; i--) if (isColliding(player, healthPacks[i])) { if (player.health < player.maxHealth) { player.health++; updateHealthDisplay(); } healthPacks.splice(i, 1); }
+        for (let i = itemBombs.length - 1; i >= 0; i--) { if (isColliding(player, itemBombs[i])) { if (bombs < 3) { bombs++; updateBombDisplay(); } itemBombs.splice(i, 1); } }
 
         if (isLaserActive) {
             const laserRect = { x: player.x, y: 0, width: player.width, height: player.y };
@@ -800,13 +835,13 @@
             }
             if (boss && isColliding(laserRect, boss) && boss.laserHitCooldown === 0) {
                 boss.health -= 0.5; boss.laserHitCooldown = 5;
-                if (boss.health <= 0) defeatEnemy(boss);
+                if (boss.health <= 0) defeatEnemy(boss, -1);
             }
         }
     }
     
     function activateLaser(now) {
-        isLaserActive = true; laserEndTime = now + 10000; spacebarHoldStart = 0;
+        isLaserActive = true; laserEndTime = now + 3000; spacebarHoldStart = 0;
     }
 
     function drawLaser() {
@@ -824,6 +859,33 @@
         ctx.fillStyle = '#0096FF';
         ctx.fillRect(player.x, barY, player.width * ratio, 10);
     }
+    
+    let bombEffectTimer = 0;
+    function useBomb() {
+        if (bombs > 0 && !gamePaused) {
+            bombs--;
+            updateBombDisplay();
+            bombEffectTimer = 10; 
+            
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                defeatEnemy(enemies[i], i, true);
+            }
+
+            if (boss) {
+                boss.health -= player.bulletDamage * 3;
+                if (boss.health <= 0) {
+                    defeatEnemy(boss, -1, true); 
+                }
+            }
+        }
+    }
+
+    function updateBombDisplay() {
+        bombDisplay.textContent = `💣 ${bombs}`;
+        mobileBombCount.textContent = bombs;
+        bombButton.style.display = bombs > 0 ? 'block' : 'none';
+    }
+
 
     function updateHealthDisplay() {
         healthDisplay.innerHTML = '';
@@ -922,6 +984,7 @@
     }
 
     window.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyB') useBomb();
         if (e.code === 'Space') {
             if (!keys['Space']) handleShootStart(e); // prevent multiple triggers
         } else {
@@ -955,6 +1018,7 @@
     rightButton.addEventListener('touchend', (e) => { e.preventDefault(); keys['ArrowRight'] = false; });
     shootButton.addEventListener('touchstart', handleShootStart);
     shootButton.addEventListener('touchend', handleShootEnd);
+    bombButton.addEventListener('touchstart', (e) => { e.preventDefault(); useBomb(); });
 
     window.addEventListener('resize', () => { if (!lobbyScreen.classList.contains('hidden')) { const c = document.getElementById('game-container'); canvas.width = c.clientWidth; canvas.height = c.clientHeight; }});
     
