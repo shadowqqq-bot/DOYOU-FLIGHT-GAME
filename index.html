@@ -91,7 +91,7 @@
             font-size: 1.5rem;
             margin-bottom: 0.5rem;
         }
-        #name-input {
+        #name-input, #new-name-input {
             pointer-events: auto;
             color: black;
         }
@@ -184,11 +184,23 @@
             <div id="health-display"></div>
         </div>
         
-        <!-- 로비 화면 -->
-        <div id="lobby-screen" class="modal">
+        <!-- 이름 입력 화면 -->
+        <div id="name-prompt-screen" class="modal hidden">
             <div class="modal-content">
-                <h1 class="text-5xl font-bold mb-4">우주 비행기 슈팅</h1>
-                <p class="text-xl mb-6">다가오는 적들을 모두 격추하세요!</p>
+                <h1 class="text-4xl font-bold mb-4">환영합니다!</h1>
+                <p class="text-xl mb-6">데이터 저장을 위해 사용할 이름을 입력해주세요.</p>
+                <div class="flex items-center gap-2">
+                    <input type="text" id="new-name-input" placeholder="이름" class="px-4 py-2 rounded text-xl">
+                    <button id="confirm-name-button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl">확인</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 로비 화면 -->
+        <div id="lobby-screen" class="modal hidden">
+            <div class="modal-content">
+                <h1 class="text-5xl font-bold mb-4">도유의 비행기 게임</h1>
+                <p id="welcome-message" class="text-xl mb-6"></p>
                 <div id="lobby-coin-display" class="text-2xl mb-4"></div>
                 <div class="flex gap-4">
                     <button id="start-button" class="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
@@ -211,8 +223,8 @@
                 <p id="final-score" class="text-2xl mb-2"></p>
                 <p id="earned-coins" class="text-2xl mb-6"></p>
                 <div class="flex items-center gap-2 mb-4">
-                    <input type="text" id="name-input" placeholder="이름 입력" class="px-4 py-2 rounded text-xl">
-                    <button id="save-score-button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl shadow-lg transition">저장</button>
+                    <input type="text" id="name-input" placeholder="이름 입력" class="px-4 py-2 rounded text-xl" readonly>
+                    <button id="save-score-button" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-bold text-xl shadow-lg transition">랭킹 저장</button>
                 </div>
                 <button id="restart-button" class="px-8 py-4 bg-green-600 hover:bg-green-700 rounded-lg text-white font-bold text-2xl shadow-lg transition duration-300 transform hover:scale-105">
                     다시 시작
@@ -279,6 +291,7 @@
     const ctx = canvas.getContext('2d');
     const allScreens = document.querySelectorAll('.modal');
 
+    const namePromptScreen = document.getElementById('name-prompt-screen');
     const lobbyScreen = document.getElementById('lobby-screen');
     const gameOverScreen = document.getElementById('game-over-screen');
     const rankingScreen = document.getElementById('ranking-screen');
@@ -293,6 +306,7 @@
     const playAgainButton = document.getElementById('play-again-button');
     const mainMenuButton = document.getElementById('main-menu-button');
     const backToLobbyButton = document.getElementById('back-to-lobby-button');
+    const confirmNameButton = document.getElementById('confirm-name-button');
     
     const mobileControls = document.getElementById('mobile-controls');
     const leftButton = document.getElementById('left-button');
@@ -300,6 +314,7 @@
     const shootButton = document.getElementById('shoot-button');
     
     const nameInput = document.getElementById('name-input');
+    const newNameInput = document.getElementById('new-name-input');
     const rankingList = document.getElementById('ranking-list');
     const skinList = document.getElementById('skin-list');
     const skillChoicesContainer = document.getElementById('skill-choices');
@@ -307,6 +322,7 @@
     const gameStats = document.getElementById('game-stats');
     const scoreDisplay = document.getElementById('score-display');
     const coinDisplay = document.getElementById('coin-display');
+    const welcomeMessage = document.getElementById('welcome-message');
     const lobbyCoinDisplay = document.getElementById('lobby-coin-display');
     const shopCoinDisplay = document.getElementById('shop-coin-display');
     const healthDisplay = document.getElementById('health-display');
@@ -325,13 +341,36 @@
     
     let boss = null;
     let bossSpawned = false, superBossSpawned = false;
+    let currentPlayer = '';
 
     // --- 스킨 데이터 ---
     const skins = [
-        { id: 'default', name: '기본 비행기', price: 0, draw: (ctx, x, y, w, h) => { ctx.fillStyle = '#c0c0c0'; ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill(); ctx.fillStyle = '#89a7ff'; ctx.beginPath(); ctx.arc(x + w / 2, y + h / 2.5, w / 5, 0, Math.PI * 2); ctx.fill(); } },
-        { id: 'red_comet', name: '레드 코멧', price: 5000, draw: (ctx, x, y, w, h) => { ctx.fillStyle = '#e74c3c'; ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x, y + h); ctx.lineTo(x + w / 2, y + h * 0.7); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill(); } },
-        { id: 'green_arrow', name: '그린 애로우', price: 10000, draw: (ctx, x, y, w, h) => { ctx.fillStyle = '#2ecc71'; ctx.fillRect(x + w * 0.4, y, w * 0.2, h); ctx.beginPath(); ctx.moveTo(x, y + h * 0.7); ctx.lineTo(x + w/2, y + h * 0.2); ctx.lineTo(x + w, y + h * 0.7); ctx.closePath(); ctx.fill(); } },
-        { id: 'gold_ship', name: '황금선', price: 50000, draw: (ctx, x, y, w, h) => { ctx.fillStyle = '#f1c40f'; ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x, y + h*0.4); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x+w, y+h*0.4); ctx.closePath(); ctx.fill(); } }
+        { id: 'default', name: '기본 비행기', price: 0, draw: (ctx, x, y, w, h) => { 
+            ctx.fillStyle = '#9EADC8'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.8); ctx.lineTo(x + w * 0.8, y + h); ctx.lineTo(x + w * 0.2, y + h); ctx.lineTo(x, y + h * 0.8); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#475569'; ctx.fillRect(x + w * 0.4, y + h * 0.6, w * 0.2, h * 0.4);
+            ctx.fillStyle = '#60A5FA'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y + h * 0.1); ctx.bezierCurveTo(x + w * 0.7, y + h * 0.4, x + w * 0.3, y + h * 0.4, x + w * 0.5, y + h * 0.1); ctx.fill();
+        } },
+        { id: 'red_comet', name: '레드 코멧', price: 5000, draw: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#DC2626'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * 0.5, y + h * 0.8); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#450A0A'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y + h * 0.4); ctx.lineTo(x + w * 0.7, y + h * 0.7); ctx.lineTo(x + w * 0.3, y + h * 0.7); ctx.closePath(); ctx.fill();
+        } },
+        { id: 'green_arrow', name: '그린 애로우', price: 10000, draw: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#16A34A'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * 0.5, y + h * 0.85); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#FBBF24'; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w * 0.2, y + h * 0.8); ctx.lineTo(x + w * 0.8, y + h * 0.8); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill();
+        } },
+        { id: 'gold_ship', name: '황금선', price: 50000, draw: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#FACC15'; ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x, y + h*0.4); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x+w, y+h*0.4); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#B45309'; ctx.beginPath(); ctx.moveTo(x + w / 2, y + h * 0.2); ctx.lineTo(x + w * 0.2, y + h); ctx.lineTo(x + w * 0.8, y + h); ctx.closePath(); ctx.fill();
+        } },
+        { id: 'starlight_phantom', name: '별빛 유령', price: 100000, draw: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#4338CA'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.6); ctx.lineTo(x + w * 0.5, y + h); ctx.lineTo(x, y + h * 0.6); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#A78BFA'; ctx.fillRect(x + w * 0.45, y, w * 0.1, h);
+            ctx.fillStyle = 'white'; for(let i=0; i<3; i++) { ctx.beginPath(); ctx.arc(x + w*(Math.random()*0.6+0.2), y + h*(Math.random()*0.6+0.2), w*0.03, 0, Math.PI*2); ctx.fill(); }
+        }},
+        { id: 'galactic_overlord', name: '은하계 군주', price: 200000, draw: (ctx, x, y, w, h) => {
+            ctx.fillStyle = '#1E293B'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#F59E0B'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y + h*0.2); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * 0.7, y + h); ctx.lineTo(x + w*0.5, y+h*0.5); ctx.lineTo(x + w * 0.3, y + h); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
+        }}
     ];
     let ownedSkins = ['default'], equippedSkin = 'default';
 
@@ -345,17 +384,56 @@
     ];
 
     // --- 게임 데이터 관리 ---
+    function getAllGameData() { return JSON.parse(localStorage.getItem('airplane_all_users') || '{}'); }
     function loadGameData() {
-        coins = parseInt(localStorage.getItem('airplaneCoins') || '0', 10);
-        ownedSkins = JSON.parse(localStorage.getItem('airplaneOwnedSkins') || '["default"]');
-        equippedSkin = localStorage.getItem('airplaneEquippedSkin') || 'default';
+        currentPlayer = localStorage.getItem('airplane_current_user');
+        if (!currentPlayer) {
+            namePromptScreen.classList.remove('hidden');
+            return;
+        }
+        
+        const allData = getAllGameData();
+        const playerData = allData[currentPlayer];
+        
+        coins = playerData.coins;
+        ownedSkins = playerData.ownedSkins;
+        equippedSkin = playerData.equippedSkin;
+
+        welcomeMessage.textContent = `${currentPlayer}님, 환영합니다!`;
+        nameInput.value = currentPlayer;
         updateCoinDisplays();
+        lobbyScreen.classList.remove('hidden');
     }
     function saveGameData() {
-        localStorage.setItem('airplaneCoins', coins);
-        localStorage.setItem('airplaneOwnedSkins', JSON.stringify(ownedSkins));
-        localStorage.setItem('airplaneEquippedSkin', equippedSkin);
+        if (!currentPlayer) return;
+        const allData = getAllGameData();
+        allData[currentPlayer] = {
+            coins: coins,
+            ownedSkins: ownedSkins,
+            equippedSkin: equippedSkin
+        };
+        localStorage.setItem('airplane_all_users', JSON.stringify(allData));
     }
+    
+    function confirmName() {
+        const name = newNameInput.value.trim();
+        if (!name) { alert('이름을 입력해주세요!'); return; }
+        
+        currentPlayer = name;
+        localStorage.setItem('airplane_current_user', currentPlayer);
+        
+        const allData = getAllGameData();
+        if (!allData[currentPlayer]) { // New player
+            coins = 0;
+            ownedSkins = ['default'];
+            equippedSkin = 'default';
+            saveGameData();
+        }
+        
+        namePromptScreen.classList.add('hidden');
+        loadGameData();
+    }
+    
     function updateCoinDisplays() {
         const formattedCoins = (coins + (currentRoundCoins || 0)).toLocaleString();
         lobbyCoinDisplay.textContent = `💰 보유 코인: ${coins.toLocaleString()}`;
@@ -367,10 +445,11 @@
     class Player {
         constructor(x, y, w, h, speed) {
             this.x = x; this.y = y; this.width = w; this.height = h;
-            this.speed = speed; this.health = 3; this.maxHealth = 3;
-            // 스킬 관련 속성
+            this.speed = speed;
+            this.health = 3; this.maxHealth = 3;
             this.bulletDamage = 1; this.shootCooldownFrames = 10;
             this.hasShield = false; this.pierceShot = false;
+            this.coinMultiplier = 1;
         }
         draw() {
             const skin = skins.find(s => s.id === equippedSkin);
@@ -412,10 +491,14 @@
             this.dx = (Math.random() - 0.5) * 3; this.laserHitCooldown = 0;
         }
         draw() {
-            ctx.fillStyle = this.color; ctx.beginPath(); ctx.moveTo(this.x, this.y);
-            ctx.lineTo(this.x + this.width, this.y);
-            ctx.lineTo(this.x + this.width / 2, this.y + this.height);
+            const x = this.x, y = this.y, w = this.width, h = this.height;
+            ctx.fillStyle = this.color; ctx.beginPath();
+            ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.5); ctx.lineTo(x + w * 0.8, y + h);
+            ctx.lineTo(x + w * 0.2, y + h); ctx.lineTo(x, y + h * 0.5);
             ctx.closePath(); ctx.fill();
+            const eyeColor = this.width > 50 ? '#FBBF24' : '#FDE047';
+            ctx.fillStyle = eyeColor; ctx.beginPath();
+            ctx.arc(x + w * 0.5, y + h * 0.4, w * 0.1, 0, Math.PI * 2); ctx.fill();
         }
         update() {
             this.y += this.speed; this.x += this.dx;
@@ -436,7 +519,9 @@
             this.dx = speed; this.shootTimer = 0; this.laserHitCooldown = 0;
         }
         draw() {
-            ctx.fillStyle = '#8e44ad'; ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = '#4C1D95'; ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = '#A21CAF'; ctx.fillRect(this.x + this.width * 0.1, this.y + this.height * 0.2, this.width * 0.8, this.height * 0.6);
+            ctx.fillStyle = '#F472B6'; ctx.beginPath(); ctx.arc(this.x + this.width/2, this.y + this.height/2, this.width * 0.1, 0, Math.PI * 2); ctx.fill();
             const healthBarWidth = this.width * (this.health / this.maxHealth);
             ctx.fillStyle = '#c0392b'; ctx.fillRect(this.x, this.y - 20, this.width, 10);
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(this.x, this.y - 20, healthBarWidth, 10);
@@ -458,8 +543,9 @@
     class SuperBoss extends Boss {
         constructor(x, y, w, h, speed, health) { super(x, y, w, h, speed, health); }
         draw() {
-            ctx.fillStyle = '#34495e'; ctx.fillRect(this.x, this.y, this.width, this.height);
-            ctx.strokeStyle = '#e74c3c'; ctx.lineWidth = 4; ctx.strokeRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = '#1E293B'; ctx.fillRect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = '#EF4444'; ctx.fillRect(this.x + this.width * 0.2, this.y, this.width * 0.6, this.height * 0.8);
+            ctx.fillStyle = '#FBBF24'; ctx.fillRect(this.x, this.y + this.height * 0.7, this.width, this.height * 0.3);
             const healthBarWidth = this.width * (this.health / this.maxHealth);
             ctx.fillStyle = '#c0392b'; ctx.fillRect(this.x, this.y - 20, this.width, 10);
             ctx.fillStyle = '#2ecc71'; ctx.fillRect(this.x, this.y - 20, healthBarWidth, 10);
@@ -520,11 +606,34 @@
         itemCoins = []; healthPacks = [];
         enemySpawnTimer = 0; shootCooldown = 0; boss = null;
         bossSpawned = false; superBossSpawned = false;
-        player = new Player(canvas.width / 2 - 25, canvas.height - 120, 50, 50, 5); // Y 위치 조정
+        player = new Player(canvas.width / 2 - 25, canvas.height - 120, 50, 50, 5);
+        applySkinAbilities();
+        updateHealthDisplay();
         isLaserActive = false; laserEndTime = 0; laserCooldownEndTime = 0; spacebarHoldStart = 0;
         stars = Array.from({ length: 100 }, () => new Star(Math.random() * canvas.width, Math.random() * canvas.height, Math.random() * 1.5, Math.random() * 0.5 + 0.2));
         scoreDisplay.textContent = `점수: ${score}`;
-        updateCoinDisplays(); updateHealthDisplay();
+        updateCoinDisplays();
+    }
+
+    function applySkinAbilities() {
+        if (!player) return;
+        const skinId = equippedSkin;
+        // Reset to defaults first
+        player.maxHealth = 3;
+        player.shootCooldownFrames = 10;
+        player.coinMultiplier = 1;
+        
+        if (skinId === 'green_arrow' || skinId === 'starlight_phantom' || skinId === 'galactic_overlord') {
+            player.maxHealth = 5;
+        }
+        player.health = player.maxHealth;
+
+        if (skinId === 'red_comet' || skinId === 'starlight_phantom' || skinId === 'galactic_overlord') {
+            player.shootCooldownFrames = 10 * 0.85; // 15% faster
+        }
+        if (skinId === 'gold_ship' || skinId === 'galactic_overlord') {
+            player.coinMultiplier = 2;
+        }
     }
 
     // --- 게임 루프 ---
@@ -544,8 +653,16 @@
             if (spacebarHoldStart === 0) spacebarHoldStart = now;
             const chargeTime = now - spacebarHoldStart;
             drawLaserChargeBar(chargeTime / 4000);
-            if (chargeTime > 4000) activateLaser(now);
+            if (chargeTime > 4000) {
+                activateLaser(now);
+            }
+        } else {
+            if (shootCooldown > 0) shootCooldown--;
+            if (keys['Space'] && !isLaserActive && shootCooldown === 0) {
+                shoot();
+            }
         }
+        
         if (isLaserActive) {
             if (now > laserEndTime) {
                 isLaserActive = false;
@@ -554,10 +671,10 @@
                 drawLaser();
             }
         }
-        if (!keys['Space']) spacebarHoldStart = 0;
-
-        if (shootCooldown > 0) shootCooldown--;
-        if (keys['Space'] && !isLaserActive && shootCooldown === 0) { shoot(); }
+        
+        if (!keys['Space']) {
+            spacebarHoldStart = 0;
+        }
         
         if (score >= 10000 && bossSpawned && !superBossSpawned && !boss) { superBossSpawned = true; spawnSuperBoss(); }
         else if (score >= 1500 && !bossSpawned) { bossSpawned = true; spawnBoss(); }
@@ -574,8 +691,8 @@
 
     // --- 보조 함수들 ---
     function spawnEnemy() {
-        if (Math.random() < 0.2) { enemies.push(new Enemy(Math.random() * (canvas.width - 60), -60, 60, 60, 1, 2, '#e74c3c')); }
-        else { const size = Math.random() * 20 + 30; enemies.push(new Enemy(Math.random() * (canvas.width - size), -size, size, size, Math.random() * 2 + 1, 1, '#ff6b6b')); }
+        if (Math.random() < 0.2) { enemies.push(new Enemy(Math.random() * (canvas.width - 60), -60, 60, 60, 1, 2, '#B91C1C')); }
+        else { const size = Math.random() * 20 + 30; enemies.push(new Enemy(Math.random() * (canvas.width - size), -size, size, size, Math.random() * 2 + 1, 1, '#F87171')); }
     }
     function spawnBoss() { boss = new Boss(canvas.width / 2 - 75, 50, 150, 100, 2, 30); }
     function spawnSuperBoss() { boss = new SuperBoss(canvas.width / 2 - 100, 50, 200, 120, 3, 100); }
@@ -653,7 +770,7 @@
             }
         }
 
-        for (let i = itemCoins.length - 1; i >= 0; i--) if (isColliding(player, itemCoins[i])) { currentRoundCoins += itemCoins[i].value; updateCoinDisplays(); itemCoins.splice(i, 1); }
+        for (let i = itemCoins.length - 1; i >= 0; i--) if (isColliding(player, itemCoins[i])) { currentRoundCoins += itemCoins[i].value * player.coinMultiplier; updateCoinDisplays(); itemCoins.splice(i, 1); }
         for (let i = healthPacks.length - 1; i >= 0; i--) if (isColliding(player, healthPacks[i])) { if (player.health < player.maxHealth) { player.health++; updateHealthDisplay(); } healthPacks.splice(i, 1); }
 
         if (isLaserActive) {
@@ -705,11 +822,12 @@
     }
     function getRankings() { return JSON.parse(localStorage.getItem('airplaneShooterRankings') || '[]'); }
     function saveScore() {
-        const name = nameInput.value.trim(); if (!name) { alert('이름을 입력해주세요!'); return; }
+        const name = nameInput.value.trim(); if (!name) return;
         const rankings = getRankings(); rankings.push({ name, score });
         rankings.sort((a, b) => b.score - a.score);
         localStorage.setItem('airplaneShooterRankings', JSON.stringify(rankings.slice(0, 10)));
-        nameInput.value = ''; showRankingScreen();
+        saveScoreButton.textContent = '저장됨';
+        saveScoreButton.disabled = true;
     }
     function showRankingScreen() {
         allScreens.forEach(s => s.classList.add('hidden'));
@@ -777,6 +895,7 @@
     backToLobbyButton.addEventListener('click', () => { shopScreen.classList.add('hidden'); lobbyScreen.classList.remove('hidden'); mobileControls.classList.add('hidden'); updateCoinDisplays(); });
     playAgainButton.addEventListener('click', () => { rankingScreen.classList.add('hidden'); gameStats.classList.remove('hidden'); mobileControls.classList.remove('hidden'); init(); requestAnimationFrame(gameLoop); });
     mainMenuButton.addEventListener('click', () => { rankingScreen.classList.add('hidden'); lobbyScreen.classList.remove('hidden'); mobileControls.classList.add('hidden');});
+    confirmNameButton.addEventListener('click', confirmName);
     
     // 모바일 터치 이벤트
     leftButton.addEventListener('touchstart', (e) => { e.preventDefault(); keys['ArrowLeft'] = true; });
