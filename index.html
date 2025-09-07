@@ -363,7 +363,7 @@
     let gameOver, gamePaused;
     let keys = {};
     let player;
-    let bullets, enemies, enemyBullets, bossBullets, itemCoins, healthPacks, itemBombs;
+    let bullets, enemies, enemyBullets, bossBullets, itemCoins, healthPacks, itemBombs, itemShields;
     let enemySpawnTimer, stars, shootCooldown;
     let spacebarHoldStart = 0;
     let isLaserActive = false, laserEndTime = 0, laserCooldownEndTime = 0;
@@ -375,29 +375,29 @@
 
     // --- 스킨 데이터 ---
     const skins = [
-        { id: 'default', name: '기본 비행기', price: 0, draw: (ctx, x, y, w, h) => { 
+        { id: 'default', name: '기본 비행기', price: 0, description: '특별한 능력이 없는 표준 기체입니다.', draw: (ctx, x, y, w, h) => { 
             ctx.fillStyle = '#9EADC8'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.8); ctx.lineTo(x + w * 0.8, y + h); ctx.lineTo(x + w * 0.2, y + h); ctx.lineTo(x, y + h * 0.8); ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#475569'; ctx.fillRect(x + w * 0.4, y + h * 0.6, w * 0.2, h * 0.4);
             ctx.fillStyle = '#60A5FA'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y + h * 0.1); ctx.bezierCurveTo(x + w * 0.7, y + h * 0.4, x + w * 0.3, y + h * 0.4, x + w * 0.5, y + h * 0.1); ctx.fill();
         } },
-        { id: 'red_comet', name: '레드 코멧', price: 5000, draw: (ctx, x, y, w, h) => {
+        { id: 'red_comet', name: '레드 코멧', price: 5000, description: '연사 속도가 15% 증가합니다.', draw: (ctx, x, y, w, h) => {
             ctx.fillStyle = '#DC2626'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * 0.5, y + h * 0.8); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#450A0A'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y + h * 0.4); ctx.lineTo(x + w * 0.7, y + h * 0.7); ctx.lineTo(x + w * 0.3, y + h * 0.7); ctx.closePath(); ctx.fill();
         } },
-        { id: 'green_arrow', name: '그린 애로우', price: 10000, draw: (ctx, x, y, w, h) => {
+        { id: 'green_arrow', name: '그린 애로우', price: 10000, description: '최대 체력이 5칸으로 시작합니다.', draw: (ctx, x, y, w, h) => {
             ctx.fillStyle = '#16A34A'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * 0.5, y + h * 0.85); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#FBBF24'; ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x + w * 0.2, y + h * 0.8); ctx.lineTo(x + w * 0.8, y + h * 0.8); ctx.lineTo(x + w, y + h); ctx.closePath(); ctx.fill();
         } },
-        { id: 'gold_ship', name: '황금선', price: 50000, draw: (ctx, x, y, w, h) => {
+        { id: 'gold_ship', name: '황금선', price: 50000, description: '획득하는 코인이 2배로 증가합니다.', draw: (ctx, x, y, w, h) => {
             ctx.fillStyle = '#FACC15'; ctx.beginPath(); ctx.moveTo(x + w / 2, y); ctx.lineTo(x, y + h*0.4); ctx.lineTo(x, y + h); ctx.lineTo(x + w, y + h); ctx.lineTo(x+w, y+h*0.4); ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#B45309'; ctx.beginPath(); ctx.moveTo(x + w / 2, y + h * 0.2); ctx.lineTo(x + w * 0.2, y + h); ctx.lineTo(x + w * 0.8, y + h); ctx.closePath(); ctx.fill();
         } },
-        { id: 'starlight_phantom', name: '별빛 유령', price: 100000, draw: (ctx, x, y, w, h) => {
+        { id: 'starlight_phantom', name: '별빛 유령', price: 100000, description: '연사 속도 증가 & 최대 체력 5칸', draw: (ctx, x, y, w, h) => {
             ctx.fillStyle = '#4338CA'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.6); ctx.lineTo(x + w * 0.5, y + h); ctx.lineTo(x, y + h * 0.6); ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#A78BFA'; ctx.fillRect(x + w * 0.45, y, w * 0.1, h);
             ctx.fillStyle = 'white'; for(let i=0; i<3; i++) { ctx.beginPath(); ctx.arc(x + w*(Math.random()*0.6+0.2), y + h*(Math.random()*0.6+0.2), w*0.03, 0, Math.PI*2); ctx.fill(); }
         }},
-        { id: 'galactic_overlord', name: '은하계 군주', price: 200000, draw: (ctx, x, y, w, h) => {
+        { id: 'galactic_overlord', name: '은하계 군주', price: 200000, description: '연사 속도 증가 & 최대 체력 5칸 & 코인 2배', draw: (ctx, x, y, w, h) => {
             ctx.fillStyle = '#1E293B'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#F59E0B'; ctx.beginPath(); ctx.moveTo(x + w * 0.5, y + h*0.2); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w * 0.7, y + h); ctx.lineTo(x + w*0.5, y+h*0.5); ctx.lineTo(x + w * 0.3, y + h); ctx.lineTo(x, y + h); ctx.closePath(); ctx.fill();
         }}
@@ -480,13 +480,22 @@
             this.bulletDamage = 1; this.shootCooldownFrames = 10;
             this.hasShield = false; this.pierceShot = false;
             this.coinMultiplier = 1;
+            this.shieldEndTime = 0;
         }
         draw() {
             const skin = skins.find(s => s.id === equippedSkin);
             if (skin) skin.draw(ctx, this.x, this.y, this.width, this.height);
-            if (this.hasShield) {
+            
+            const now = performance.now();
+            if (this.hasShield) { // 1회용 보호막
                 ctx.strokeStyle = '#3498db'; ctx.lineWidth = 3;
                 ctx.beginPath(); ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2 + 10, 0, Math.PI * 2);
+                ctx.stroke();
+            } else if (this.shieldEndTime > now) { // 시간제 보호막
+                ctx.strokeStyle = `rgba(46, 204, 113, ${ (this.shieldEndTime - now) / 5000 * 0.7 + 0.3 })`;
+                ctx.lineWidth = 5;
+                ctx.beginPath();
+                ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2 + 12, 0, Math.PI * 2);
                 ctx.stroke();
             }
         }
@@ -496,6 +505,7 @@
             this.draw();
         }
         takeDamage() {
+            if (performance.now() < this.shieldEndTime) return;
             if (this.hasShield) { this.hasShield = false; return; }
             this.health--;
             updateHealthDisplay();
@@ -515,9 +525,9 @@
     }
 
     class Enemy {
-        constructor(x, y, w, h, speed, health, color) {
+        constructor(x, y, w, h, speed, health, type, color) {
             this.x = x; this.y = y; this.width = w; this.height = h;
-            this.speed = speed; this.health = health; this.color = color;
+            this.speed = speed; this.health = health; this.type = type; this.color = color;
             this.dx = (Math.random() - 0.5) * 3; this.laserHitCooldown = 0;
         }
         draw() {
@@ -526,7 +536,7 @@
             ctx.moveTo(x + w * 0.5, y); ctx.lineTo(x + w, y + h * 0.5); ctx.lineTo(x + w * 0.8, y + h);
             ctx.lineTo(x + w * 0.2, y + h); ctx.lineTo(x, y + h * 0.5);
             ctx.closePath(); ctx.fill();
-            const eyeColor = this.width > 50 ? '#FBBF24' : '#FDE047';
+            const eyeColor = this.type === 'large' ? '#FBBF24' : '#FDE047';
             ctx.fillStyle = eyeColor; ctx.beginPath();
             ctx.arc(x + w * 0.5, y + h * 0.4, w * 0.1, 0, Math.PI * 2); ctx.fill();
         }
@@ -534,7 +544,9 @@
             this.y += this.speed; this.x += this.dx;
             if (this.laserHitCooldown > 0) this.laserHitCooldown--;
             if (this.x <= 0 || this.x + this.width >= canvas.width) this.dx *= -1;
-            if (Math.random() < 0.005 && this.y > 0 && this.y < canvas.height / 2) this.shoot();
+            if ((this.type === 'medium' || this.type === 'large') && Math.random() < 0.008 && this.y > 0 && this.y < canvas.height / 2) {
+                this.shoot();
+            }
         }
         shoot() {
             const bulletX = this.x + this.width / 2 - 3; const bulletY = this.y + this.height;
@@ -566,7 +578,7 @@
         }
         shoot() {
             const bulletX = this.x + this.width / 2 - 5; const bulletY = this.y + this.height;
-            bossBullets.push(new Bullet(bulletX, bulletY, 10, 20, 5, '#f39c12'));
+            bossBullets.push(new Bullet(bulletX, bulletY, 10, 20, 5 + difficultyLevel, '#f39c12'));
         }
     }
     
@@ -626,6 +638,22 @@
         }
         update() { this.y += this.speed; }
     }
+    
+    class ShieldPack {
+        constructor(x, y) {
+            this.x = x; this.y = y; this.width = 25; this.height = 25; this.speed = 2;
+        }
+        draw() {
+            ctx.strokeStyle = '#27AE60';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(this.x + this.width / 2, this.y + this.height / 2, this.width / 2, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(46, 204, 113, 0.3)';
+            ctx.fill();
+        }
+        update() { this.y += this.speed; }
+    }
 
     // --- 게임 초기화 ---
     function init() {
@@ -633,7 +661,7 @@
         canvas.width = container.clientWidth; canvas.height = container.clientHeight;
         score = 0; currentRoundCoins = 0; bombs = 1; gameOver = false; gamePaused = false;
         bullets = []; enemies = []; enemyBullets = []; bossBullets = [];
-        itemCoins = []; healthPacks = []; itemBombs = [];
+        itemCoins = []; healthPacks = []; itemBombs = []; itemShields = [];
         enemySpawnTimer = 0; shootCooldown = 0; boss = null;
         difficultyLevel = 1; nextBossScore = 10000;
         player = new Player(canvas.width / 2 - 25, canvas.height - 120, 50, 50, 5);
@@ -683,12 +711,10 @@
         if (keys['Space'] && !isLaserActive && now > laserCooldownEndTime) {
             if (spacebarHoldStart > 0) {
                 const holdDuration = now - spacebarHoldStart;
-                if (holdDuration > 1000) { // Start charging after 1 sec
+                if (holdDuration > 1000) { 
                     const chargeTime = holdDuration - 1000;
-                    drawLaserChargeBar(chargeTime / 3000); // 3 seconds to fully charge
-                    if (chargeTime > 3000) {
-                        activateLaser(now);
-                    }
+                    drawLaserChargeBar(chargeTime / 3000); 
+                    if (chargeTime > 3000) activateLaser(now);
                 }
             }
         }
@@ -708,24 +734,33 @@
             spawnBoss();
         }
         
-        [bullets, bossBullets, enemyBullets, itemCoins, healthPacks, itemBombs].forEach(arr => {
+        [bullets, bossBullets, enemyBullets, itemCoins, healthPacks, itemBombs, itemShields].forEach(arr => {
             arr.forEach((item, index) => { item.update(); item.draw(); if (item.y > canvas.height) arr.splice(index, 1); });
         });
-        if (!boss) { enemySpawnTimer++; if (enemySpawnTimer > Math.max(20, 60 - difficultyLevel * 5)) { spawnEnemy(); enemySpawnTimer = 0; } }
+        if (!boss) { enemySpawnTimer++; if (enemySpawnTimer > Math.max(15, 50 - difficultyLevel * 4)) { spawnEnemy(); enemySpawnTimer = 0; } }
         enemies.forEach((enemy) => { enemy.update(); enemy.draw(); });
         if (boss) boss.update();
         handleCollisions();
+
+        if (bombEffectTimer > 0) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${bombEffectTimer / 60})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            bombEffectTimer--;
+        }
+
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
     // --- 보조 함수들 ---
     function spawnEnemy() {
-        const speedMultiplier = 1 + (difficultyLevel - 1) * 0.1;
-        if (Math.random() < 0.2) { 
-            enemies.push(new Enemy(Math.random() * (canvas.width - 60), -60, 60, 60, 1 * speedMultiplier, 2, '#B91C1C')); 
-        } else { 
-            const size = Math.random() * 20 + 30; 
-            enemies.push(new Enemy(Math.random() * (canvas.width - size), -size, size, size, (Math.random() * 2 + 1) * speedMultiplier, 1, '#F87171')); 
+        const speedMultiplier = 1 + (difficultyLevel - 1) * 0.2;
+        const random = Math.random();
+        if (random < 0.1) { // Large
+            enemies.push(new Enemy(Math.random() * (canvas.width - 60), -60, 60, 60, 0.75 * speedMultiplier, 3, 'large', '#B91C1C')); 
+        } else if (random < 0.4) { // Medium
+            enemies.push(new Enemy(Math.random() * (canvas.width - 45), -45, 45, 45, 1 * speedMultiplier, 2, 'medium', '#F87171')); 
+        } else { // Small
+            enemies.push(new Enemy(Math.random() * (canvas.width - 30), -30, 30, 30, 1.25 * speedMultiplier, 1, 'small', '#FECACA')); 
         }
     }
     function spawnBoss() { 
@@ -749,37 +784,29 @@
 
     function defeatEnemy(enemy, index, fromBomb = false) {
         const isBoss = enemy instanceof Boss;
-        const isBig = !isBoss && enemy.width > 50;
         
         let scoreGain = 0;
 
         if (isBoss) {
-            scoreGain = 5000 * difficultyLevel;
+            scoreGain = 200 * difficultyLevel;
             if(!fromBomb){
-                const coinCount = 25 * difficultyLevel;
-                for(let c = 0; c < coinCount; c++) {
-                    itemCoins.push(new Coin(enemy.x + enemy.width / 2 + (Math.random() - 0.5) * enemy.width, enemy.y + enemy.height/2 + (Math.random() - 0.5) * enemy.height, 20));
-                }
+                if (Math.random() < 0.3) itemCoins.push(new Coin(enemy.x, enemy.y, 50 * difficultyLevel));
                 boss = null;
                 difficultyLevel++;
                 nextBossScore += 10000;
                 presentSkillChoice();
             }
         } else {
-            scoreGain = isBig ? 250 : 100;
+            if (enemy.type === 'large') scoreGain = 100;
+            else if (enemy.type === 'medium') scoreGain = 50;
+            else scoreGain = 10;
+            
              if(!fromBomb){
-                if (Math.random() < 0.3) {
-                    const coinCount = isBig ? 2 : 1;
-                    for(let c = 0; c < coinCount; c++) {
-                        itemCoins.push(new Coin(enemy.x + (Math.random() - 0.5) * 20, enemy.y, 10));
-                    }
-                }
-                if (Math.random() < 0.1) {
-                    healthPacks.push(new HealthPack(enemy.x, enemy.y));
-                }
-                 if (Math.random() < 0.1) {
-                    itemBombs.push(new BombPack(enemy.x, enemy.y));
-                }
+                const dropRNG = Math.random();
+                if (dropRNG < 0.05) { itemShields.push(new ShieldPack(enemy.x, enemy.y)); }
+                else if (dropRNG < 0.15) { itemBombs.push(new BombPack(enemy.x, enemy.y)); }
+                else if (dropRNG < 0.25) { healthPacks.push(new HealthPack(enemy.x, enemy.y)); }
+                else if (dropRNG < 0.55) { itemCoins.push(new Coin(enemy.x, enemy.y, scoreGain)); }
             }
             enemies.splice(index, 1);
         }
@@ -822,6 +849,8 @@
         for (let i = itemCoins.length - 1; i >= 0; i--) if (isColliding(player, itemCoins[i])) { currentRoundCoins += itemCoins[i].value * player.coinMultiplier; updateCoinDisplays(); itemCoins.splice(i, 1); }
         for (let i = healthPacks.length - 1; i >= 0; i--) if (isColliding(player, healthPacks[i])) { if (player.health < player.maxHealth) { player.health++; updateHealthDisplay(); } healthPacks.splice(i, 1); }
         for (let i = itemBombs.length - 1; i >= 0; i--) { if (isColliding(player, itemBombs[i])) { if (bombs < 3) { bombs++; updateBombDisplay(); } itemBombs.splice(i, 1); } }
+        for (let i = itemShields.length - 1; i >= 0; i--) { if (isColliding(player, itemShields[i])) { player.shieldEndTime = performance.now() + 5000; itemShields.splice(i, 1); } }
+
 
         if (isLaserActive) {
             const laserRect = { x: player.x, y: 0, width: player.width, height: player.y };
@@ -865,14 +894,16 @@
         if (bombs > 0 && !gamePaused) {
             bombs--;
             updateBombDisplay();
-            bombEffectTimer = 10; 
+            bombEffectTimer = 60; 
             
+            enemyBullets.length = 0;
+
             for (let i = enemies.length - 1; i >= 0; i--) {
                 defeatEnemy(enemies[i], i, true);
             }
 
             if (boss) {
-                boss.health -= player.bulletDamage * 3;
+                boss.health -= player.bulletDamage * 30;
                 if (boss.health <= 0) {
                     defeatEnemy(boss, -1, true); 
                 }
@@ -952,13 +983,25 @@
             const previewCanvas = document.createElement('canvas');
             previewCanvas.className = 'skin-preview'; previewCanvas.width = 100; previewCanvas.height = 100;
             skin.draw(previewCanvas.getContext('2d'), 25, 25, 50, 50);
-            const name = document.createElement('p'); name.textContent = skin.name;
+            
+            const name = document.createElement('p');
+            name.className = 'font-bold text-lg mt-2';
+            name.textContent = skin.name;
+            
+            const description = document.createElement('p');
+            description.className = 'text-sm text-gray-300 mt-1 flex-grow';
+            description.textContent = skin.description;
+            
             const button = document.createElement('button');
-            button.className = 'skin-button px-4 py-2 rounded-lg text-white font-bold shadow-lg';
+            button.className = 'skin-button px-4 py-2 mt-2 rounded-lg text-white font-bold shadow-lg';
             if (isEquipped) { button.textContent = '장착중'; button.disabled = true; button.classList.add('bg-gray-500'); }
             else if (isOwned) { button.textContent = '장착'; button.classList.add('bg-green-600', 'hover:bg-green-700'); button.onclick = () => { equippedSkin = skin.id; saveGameData(); populateShop(); }; }
             else { button.textContent = `구매 (💰${skin.price.toLocaleString()})`; button.classList.add('bg-blue-600', 'hover:bg-blue-700'); button.onclick = () => { if (coins >= skin.price) { coins -= skin.price; ownedSkins.push(skin.id); equippedSkin = skin.id; saveGameData(); updateCoinDisplays(); populateShop(); } else { alert('코인이 부족합니다!'); } }; }
-            item.appendChild(previewCanvas); item.appendChild(name); item.appendChild(button);
+            
+            item.appendChild(previewCanvas); 
+            item.appendChild(name);
+            item.appendChild(description);
+            item.appendChild(button);
             skinList.appendChild(item);
         });
     }
