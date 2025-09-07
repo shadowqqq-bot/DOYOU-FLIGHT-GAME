@@ -125,6 +125,8 @@
             display: flex;
             gap: 20px;
             margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .skill-card {
             border: 2px solid #f1c40f;
@@ -145,6 +147,29 @@
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
+        }
+
+        @media (max-width: 640px) {
+            .modal-content {
+                padding: 20px;
+                width: 90%;
+            }
+            #skill-choices {
+                flex-direction: column;
+                gap: 15px;
+            }
+            .skill-card {
+                width: 100%;
+            }
+            .modal-content h1, .modal-content h2 {
+                font-size: 2.5rem; /* Adjust title font size on mobile */
+            }
+            .modal-content p {
+                font-size: 1rem; /* Adjust paragraph font size on mobile */
+            }
+            .flex.gap-4 { /* Adjust button groups */
+                flex-direction: column;
+            }
         }
     </style>
 </head>
